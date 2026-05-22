@@ -467,6 +467,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: cover; object-position: center;
   transition: transform .4s ease;
+  cursor: zoom-in;
 }
 @media (min-width: 1024px) { .card:hover .card-img { transform: scale(1.04); } }
 
@@ -755,6 +756,35 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 @keyframes slideIn  { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:none} }
 @keyframes slideOut { to{opacity:0;transform:translateX(-16px)} }
+
+/* ── Lightbox ─────────────────────────────────────── */
+#lightbox {
+  display: none; position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,.93); place-items: center; padding: 20px;
+}
+#lightbox.open { display: grid; animation: lbFade .22s ease; }
+@keyframes lbFade  { from{opacity:0} to{opacity:1} }
+#lightbox-img {
+  max-width: min(880px, 92vw); max-height: 82vh;
+  object-fit: contain; border-radius: 10px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.8);
+  animation: lbScale .22s ease;
+}
+@keyframes lbScale { from{transform:scale(.94)} to{transform:scale(1)} }
+#lightbox-caption {
+  position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+  color: #fff; font-size: .88rem; opacity: .85; white-space: nowrap;
+  background: rgba(0,0,0,.55); padding: 6px 16px; border-radius: 20px;
+  pointer-events: none;
+}
+#lightbox-close {
+  position: absolute; top: 16px; right: 18px;
+  background: rgba(255,255,255,.13); border: 1px solid rgba(255,255,255,.18);
+  color: #fff; font-size: 1.3rem; width: 40px; height: 40px;
+  border-radius: 50%; cursor: pointer; display: grid; place-items: center;
+  transition: background .2s; line-height: 1;
+}
+#lightbox-close:hover { background: rgba(255,255,255,.28); }
 .toast-avatar {
   width: 34px; height: 34px; border-radius: 50%;
   display: grid; place-items: center;
@@ -1099,6 +1129,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     Order on WhatsApp
   </a>
   <a class="mbar-deals" href="#deals" aria-label="Browse deals">Browse Deals</a>
+</div>
+
+<!-- ══ LIGHTBOX ════════════════════════════════════ -->
+<div id="lightbox" role="dialog" aria-modal="true" aria-label="Product image viewer">
+  <button id="lightbox-close" aria-label="Close image viewer">✕</button>
+  <img id="lightbox-img" src="" alt="" />
+  <div id="lightbox-caption"></div>
 </div>
 
 <script>
@@ -1602,6 +1639,40 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     e.preventDefault();
     location.reload();
   });
+
+  /* ── Lightbox ─────────────────────────────────── */
+  (function() {
+    const lb      = document.getElementById("lightbox");
+    const lbImg   = document.getElementById("lightbox-img");
+    const lbCap   = document.getElementById("lightbox-caption");
+    const lbClose = document.getElementById("lightbox-close");
+
+    function openLb(src, alt) {
+      lbImg.src = src;
+      lbImg.alt = alt;
+      lbCap.textContent = alt;
+      lb.classList.add("open");
+      document.body.style.overflow = "hidden";
+      lbClose.focus();
+    }
+    function closeLb() {
+      lb.classList.remove("open");
+      document.body.style.overflow = "";
+      lbImg.src = "";
+    }
+
+    lbClose.addEventListener("click", closeLb);
+    lb.addEventListener("click", e => { if (e.target === lb) closeLb(); });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && lb.classList.contains("open")) closeLb();
+    });
+
+    /* Event delegation — works even after grid re-renders */
+    document.getElementById("grid").addEventListener("click", e => {
+      const img = e.target.closest(".card-img");
+      if (img) openLb(img.src, img.alt);
+    });
+  })();
 
   render();
 </script>
